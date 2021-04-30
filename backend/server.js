@@ -1,18 +1,36 @@
-// creation of server
-import express from 'express';
-import data from './data.js';
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import userRouter from "./routers/userRouter.js";
+import productRouter from "./routers/productRouter.js";
 
-const app=express();
+dotenv.config();
+const app = express()
+app.use(express.json())
+app.use(express.urlencoded({extended:true}))
+const url = `mongodb://umeshchandra:umesh36@cluster0-shard-00-00.41mlf.mongodb.net:27017,cluster0-shard-00-01.41mlf.mongodb.net:27017,cluster0-shard-00-02.41mlf.mongodb.net:27017/amazona?authSource=admin&replicaSet=atlas-10fd6h-shard-0&readPreference=primary&appname=MongoDB%20Compass&ssl=true`;
+mongoose
+  .connect(process.env.MONGODB_URL || url, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+  })
+  .then(() => console.log(`connected to database successfully`))
+  .catch((error) => console.log(error.message));
 
-app.get('/api/products',(req,res)=>{
-    res.send(data.products);
-
+app.use("/api/users", userRouter);
+app.use("/api/products", productRouter);
+app.get("/", (req, res) => {
+  res.send("Heartbeat check successful");
 });
-app.get('/',(req,res)=>{
-    res.send('Server is ready')
-});
-const port=process.env.PORT || 5000;
 
-app.listen(port,()=>{
-    console.log(`Serve at http://localhost:${port}`)
-})
+//error catcher middleware
+app.use((err, req, res, next) => {
+  res.status(500).send({ message: err.message });
+});
+
+const port = process.env.PORT || 5000;
+
+app.listen(port, () => {
+  console.log(`Serve at http://localhost:${port}`);
+});
